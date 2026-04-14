@@ -10,8 +10,8 @@ from fastapi.staticfiles import StaticFiles
 # Ensure project root is on sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from api.deps import get_settings
-from api.routes import leads, pipeline, email, export, agents
+from api.deps import get_db, get_settings
+from api.routes import leads, pipeline, email, export, agents, outreach, auth
 
 
 def create_app() -> FastAPI:
@@ -31,6 +31,21 @@ def create_app() -> FastAPI:
     app.include_router(email.router)
     app.include_router(export.router)
     app.include_router(agents.router)
+    app.include_router(outreach.router)
+    app.include_router(auth.router)
+
+    @app.on_event("startup")
+    def reset_stuck_messages():
+        try:
+            db = get_db()
+            stuck = db.list_outreach_messages(status="sending")
+            for msg in stuck:
+                db.update_outreach_status(msg["id"], "approved")
+            if stuck:
+                import logging
+                logging.getLogger(__name__).info(f"Reset {len(stuck)} stuck 'sending' messages to 'approved'")
+        except Exception:
+            pass
 
     # Serve frontend static files in production
     dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
