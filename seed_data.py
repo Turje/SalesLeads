@@ -1,5 +1,6 @@
 """Seed the database with realistic NYC commercial real estate leads."""
 
+import os
 from datetime import date
 from core.database import Database
 from core.models import EnrichedLead
@@ -1153,7 +1154,8 @@ SAMPLE_LEADS = MANHATTAN + BROOKLYN + QUEENS + BRONX + STATEN_ISLAND
 
 def seed() -> None:
     """Seed the database with sample leads."""
-    db = Database()
+    db_path = os.environ.get("DATABASE_PATH", "salesleads.db")
+    db = Database(db_path)
     existing = db.get_lead_count()
     if existing > 0:
         print(f"Database already has {existing} leads. Skipping seed.")
