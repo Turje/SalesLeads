@@ -1,0 +1,13 @@
+services:
+  - type: web
+    runtime: docker
+    name: salesleads-crm
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_PATH
+        value: /data/salesleads.db
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: PYTHONUNBUFFERED
+        value: "1"
