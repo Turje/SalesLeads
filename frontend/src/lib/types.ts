@@ -65,3 +65,62 @@ export interface EmailDraftResponse {
   model: string;
   duration_ms: number;
 }
+
+// ── Outreach ──────────────────────────────────────────────
+
+export interface OutreachGenerateRequest {
+  lead_ids: number[];
+  template: "initial_outreach" | "follow_up" | "meeting_request";
+}
+
+export interface SkippedLead {
+  lead_id: number;
+  reason: string;
+}
+
+export interface OutreachMessage {
+  id: number;
+  lead_id: number;
+  template: string;
+  status: "draft" | "approved" | "sending" | "sent" | "failed" | "discarded";
+  subject: string;
+  body: string;
+  to_email: string | null;
+  to_name: string | null;
+  error_message: string | null;
+  model: string;
+  duration_ms: number;
+  generated_at: string;
+  approved_at: string | null;
+  sent_at: string | null;
+  gmail_message_id: string | null;
+}
+
+export interface OutreachGenerateResponse {
+  generated: number;
+  skipped: SkippedLead[];
+  messages: OutreachMessage[];
+}
+
+export interface OutreachQueueResponse {
+  items: OutreachMessage[];
+  total: number;
+}
+
+export interface OutreachSendResponse {
+  job_id: string;
+  total: number;
+}
+
+export interface SendStatusResponse {
+  status: "running" | "done";
+  sent: number;
+  failed: number;
+  total: number;
+  errors: Array<{ message_id: number; error: string }>;
+}
+
+export interface GmailStatusResponse {
+  connected: boolean;
+  email: string | null;
+}

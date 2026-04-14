@@ -5,6 +5,13 @@ import type {
   AgentStatus,
   EmailDraftRequest,
   EmailDraftResponse,
+  OutreachGenerateRequest,
+  OutreachGenerateResponse,
+  OutreachMessage,
+  OutreachQueueResponse,
+  OutreachSendResponse,
+  SendStatusResponse,
+  GmailStatusResponse,
 } from "./types";
 
 const BASE = "/api";
@@ -75,5 +82,43 @@ export const api = {
     status: () => fetchJSON<AgentStatus>(`${BASE}/agents/status`),
     trigger: () =>
       fetchJSON<{ status: string }>(`${BASE}/agents/trigger`, { method: "POST" }),
+  },
+  outreach: {
+    generate: (req: OutreachGenerateRequest) =>
+      fetchJSON<OutreachGenerateResponse>(`${BASE}/outreach/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req),
+      }),
+    queue: (params?: Record<string, string>) => {
+      const qs = params ? `?${new URLSearchParams(params)}` : "";
+      return fetchJSON<OutreachQueueResponse>(`${BASE}/outreach/queue${qs}`);
+    },
+    editMessage: (id: number, data: { subject?: string; body?: string; status?: string }) =>
+      fetchJSON<OutreachMessage>(`${BASE}/outreach/queue/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }),
+    approve: (ids: number[]) =>
+      fetchJSON<{ approved: number }>(`${BASE}/outreach/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      }),
+    send: () =>
+      fetchJSON<OutreachSendResponse>(`${BASE}/outreach/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      }),
+    sendStatus: (jobId: string) =>
+      fetchJSON<SendStatusResponse>(`${BASE}/outreach/send-status/${jobId}`),
+    history: (leadId: number) =>
+      fetchJSON<OutreachMessage[]>(`${BASE}/outreach/history/${leadId}`),
+  },
+  auth: {
+    gmailStatus: () => fetchJSON<GmailStatusResponse>(`${BASE}/auth/gmail/status`),
+    gmailAuthUrl: () => fetchJSON<{ auth_url: string }>(`${BASE}/auth/gmail`),
+    gmailDisconnect: () => fetch(`${BASE}/auth/gmail`, { method: "DELETE" }),
   },
 };
