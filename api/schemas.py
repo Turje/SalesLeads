@@ -129,6 +129,94 @@ class EmailDraftResponse(BaseModel):
     duration_ms: float
 
 
+# ── Outreach ──────────────────────────────────────────────
+
+class OutreachGenerateRequest(BaseModel):
+    """Batch-generate email drafts for multiple leads."""
+    lead_ids: list[int]
+    template: str
+
+    @field_validator("template")
+    @classmethod
+    def validate_template(cls, v: str) -> str:
+        if v not in VALID_EMAIL_TEMPLATES:
+            raise ValueError(f"Invalid template '{v}'. Must be one of: {', '.join(sorted(VALID_EMAIL_TEMPLATES))}")
+        return v
+
+
+class SkippedLead(BaseModel):
+    lead_id: int
+    reason: str
+
+
+class OutreachMessageOut(BaseModel):
+    id: int
+    lead_id: int
+    template: str
+    status: str
+    subject: str
+    body: str
+    to_email: str | None
+    to_name: str | None
+    error_message: str | None
+    model: str
+    duration_ms: int
+    generated_at: str
+    approved_at: str | None
+    sent_at: str | None
+    gmail_message_id: str | None
+
+
+class OutreachGenerateResponse(BaseModel):
+    generated: int
+    skipped: list[SkippedLead]
+    messages: list[OutreachMessageOut]
+
+
+class OutreachQueueResponse(BaseModel):
+    items: list[OutreachMessageOut]
+    total: int
+
+
+class OutreachApproveRequest(BaseModel):
+    ids: list[int]
+
+
+class OutreachApproveResponse(BaseModel):
+    approved: int
+
+
+class OutreachSendResponse(BaseModel):
+    job_id: str
+    total: int
+
+
+class SendStatusResponse(BaseModel):
+    status: str
+    sent: int
+    failed: int
+    total: int
+    errors: list[dict]
+
+
+class OutreachEditRequest(BaseModel):
+    subject: str | None = None
+    body: str | None = None
+    status: str | None = None
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: str | None) -> str | None:
+        if v is not None and v not in ("approved", "discarded"):
+            raise ValueError("Status must be 'approved' or 'discarded'")
+        return v
+
+
+class GmailStatusResponse(BaseModel):
+    connected: bool
+    email: str | None = None
+
+
 # ---------------------------------------------------------------------------
 # Agents
 # ---------------------------------------------------------------------------
