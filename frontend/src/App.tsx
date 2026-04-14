@@ -5,6 +5,7 @@ import PipelinePage from "@/pages/pipeline";
 import LeadsPage from "@/pages/leads";
 import LeadDetailPage from "@/pages/lead-detail";
 import EmailPage from "@/pages/email";
+import OutreachPage from "@/pages/outreach";
 import ExportPage from "@/pages/export";
 
 const queryClient = new QueryClient({
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/leads/:id" element={<LeadDetailPage />} />
             <Route path="/pipeline" element={<PipelinePage />} />
             <Route path="/email" element={<EmailPage />} />
+            <Route path="/outreach" element={<OutreachPage />} />
             <Route path="/export" element={<ExportPage />} />
           </Routes>
         </RootLayout>

@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Users,
   Mail,
+  Send,
   Download,
 } from "lucide-react";
 import {
@@ -22,6 +23,7 @@ const navItems = [
   { title: "Leads", icon: Users, to: "/" },
   { title: "Pipeline", icon: LayoutDashboard, to: "/pipeline" },
   { title: "Email Drafter", icon: Mail, to: "/email" },
+  { title: "Outreach", icon: Send, to: "/outreach" },
   { title: "Export", icon: Download, to: "/export" },
 ];
 
