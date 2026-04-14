@@ -95,28 +95,18 @@ export function LeadFilters({ filters, onFilterChange }: LeadFiltersProps) {
         <Select
           value={String(filters.neighborhood ?? "")}
           onValueChange={(v) => update("neighborhood", v ?? "")}
+          disabled={!filters.borough}
         >
           <SelectTrigger className="w-full" id="neighborhood-filter">
-            <SelectValue placeholder="All neighborhoods" />
+            <SelectValue placeholder={filters.borough ? "Select neighborhood" : "Select a borough first"} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All</SelectItem>
-            {(filters.borough
-              ? BOROUGH_NEIGHBORHOODS[String(filters.borough)] ?? []
-              : Object.entries(BOROUGH_NEIGHBORHOODS).flatMap(([borough, hoods]) =>
-                  hoods.map((h) => ({ borough, hood: h }))
-                )
-            ).map((item) =>
-              typeof item === "string" ? (
-                <SelectItem key={item} value={item}>
-                  {item}
-                </SelectItem>
-              ) : (
-                <SelectItem key={`${item.borough}-${item.hood}`} value={item.hood}>
-                  {item.hood}
-                </SelectItem>
-              )
-            )}
+            <SelectItem value="">All neighborhoods</SelectItem>
+            {(BOROUGH_NEIGHBORHOODS[String(filters.borough)] ?? []).map((hood) => (
+              <SelectItem key={hood} value={hood}>
+                {hood}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
