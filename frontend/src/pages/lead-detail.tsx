@@ -16,10 +16,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, ThumbsUp, ThumbsDown } from "lucide-react";
 import { toast } from "sonner";
 import type { PipelineStage } from "@/lib/types";
+import { useOutreachHistory } from "@/hooks/use-outreach";
 
 const STAGES: PipelineStage[] = [
   "NEW",
@@ -38,6 +40,7 @@ export default function LeadDetailPage() {
   const leadId = Number(id);
   const { data: lead, isLoading } = useLead(leadId);
   const updateStage = useUpdateStage();
+  const { data: outreachHistory } = useOutreachHistory(leadId);
 
   const handleStageChange = (newStage: string | null) => {
     if (!newStage) return;
@@ -151,6 +154,7 @@ export default function LeadDetailPage() {
           <TabsTrigger value="building">Building</TabsTrigger>
           <TabsTrigger value="intelligence">Intelligence</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
+          <TabsTrigger value="outreach">Outreach</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -179,6 +183,65 @@ export default function LeadDetailPage() {
         <TabsContent value="notes">
           <div className="pt-4">
             <NotesSection leadId={lead.id} notes={lead.qualification_notes} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="outreach">
+          <div className="flex flex-col gap-3 pt-4">
+            {!outreachHistory || outreachHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No outreach history</p>
+            ) : (
+              outreachHistory.map((msg) => (
+                <div
+                  key={msg.id}
+                  className="flex flex-col gap-1 rounded-lg border border-border bg-card p-4"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(msg.generated_at).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                    <span className="text-sm font-medium text-foreground">
+                      {msg.template
+                        .split("_")
+                        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                        .join(" ")}
+                    </span>
+                    {msg.status === "draft" && (
+                      <Badge variant="secondary">Draft</Badge>
+                    )}
+                    {msg.status === "approved" && (
+                      <Badge variant="default">Approved</Badge>
+                    )}
+                    {msg.status === "sent" && (
+                      <Badge className="bg-green-600 text-white hover:bg-green-700">Sent</Badge>
+                    )}
+                    {msg.status === "failed" && (
+                      <Badge variant="destructive">Failed</Badge>
+                    )}
+                    {(msg.status === "discarded" || msg.status === "sending") && (
+                      <Badge variant="secondary">
+                        {msg.status.charAt(0).toUpperCase() + msg.status.slice(1)}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-foreground">{msg.subject}</p>
+                  {msg.sent_at && (
+                    <p className="text-xs text-muted-foreground">
+                      Sent{" "}
+                      {new Date(msg.sent_at).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </TabsContent>
       </Tabs>
