@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from contextlib import contextmanager
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Iterator
 
@@ -61,6 +61,40 @@ CREATE INDEX IF NOT EXISTS idx_leads_stage ON leads(pipeline_stage);
 CREATE INDEX IF NOT EXISTS idx_leads_score ON leads(score);
 CREATE INDEX IF NOT EXISTS idx_leads_borough ON leads(borough);
 CREATE INDEX IF NOT EXISTS idx_leads_neighborhood ON leads(neighborhood);
+
+CREATE TABLE IF NOT EXISTS outreach_messages (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    lead_id         INTEGER NOT NULL,
+    template        TEXT NOT NULL,
+    subject         TEXT NOT NULL DEFAULT '',
+    body            TEXT NOT NULL DEFAULT '',
+    status          TEXT NOT NULL DEFAULT 'draft',
+    to_email        TEXT,
+    to_name         TEXT,
+    error_message   TEXT,
+    model           TEXT NOT NULL DEFAULT '',
+    duration_ms     INTEGER NOT NULL DEFAULT 0,
+    generated_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    approved_at     TEXT,
+    sent_at         TEXT,
+    gmail_message_id TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_outreach_status ON outreach_messages(status);
+CREATE INDEX IF NOT EXISTS idx_outreach_lead_id ON outreach_messages(lead_id);
+CREATE INDEX IF NOT EXISTS idx_outreach_sent_at ON outreach_messages(sent_at);
+
+CREATE TABLE IF NOT EXISTS gmail_credentials (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    email_address TEXT NOT NULL,
+    encrypted_refresh_token TEXT NOT NULL,
+    encrypted_access_token TEXT,
+    token_expiry TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 """
 
 # Columns added after initial release — used by _migrate()
@@ -296,6 +330,170 @@ class Database:
             "run_timestamp": row["run_timestamp"],
             "stats": json.loads(row["stats"]),
         }
+
+    # ── Outreach Messages ──────────────────────────────────────
+
+    def insert_outreach_message(
+        self,
+        lead_id: int,
+        template: str,
+        subject: str,
+        body: str,
+        to_email: str | None,
+        to_name: str | None,
+        model: str,
+        duration_ms: int,
+    ) -> int:
+        now = datetime.now().isoformat()
+        with self._conn() as conn:
+            cur = conn.execute(
+                """INSERT INTO outreach_messages
+                   (lead_id, template, subject, body, to_email, to_name,
+                    model, duration_ms, generated_at, created_at, updated_at)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                (lead_id, template, subject, body, to_email, to_name,
+                 model, duration_ms, now, now, now),
+            )
+            return cur.lastrowid  # type: ignore[return-value]
+
+    def get_outreach_message(self, msg_id: int) -> dict | None:
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT * FROM outreach_messages WHERE id=?", (msg_id,)
+            ).fetchone()
+        return dict(row) if row else None
+
+    def list_outreach_messages(
+        self,
+        status: str | None = None,
+        lead_id: int | None = None,
+    ) -> list[dict]:
+        query = "SELECT * FROM outreach_messages WHERE 1=1"
+        params: list = []
+        if status is not None:
+            query += " AND status = ?"
+            params.append(status)
+        if lead_id is not None:
+            query += " AND lead_id = ?"
+            params.append(lead_id)
+        query += " ORDER BY generated_at DESC"
+        with self._conn() as conn:
+            rows = conn.execute(query, params).fetchall()
+        return [dict(r) for r in rows]
+
+    def update_outreach_status(
+        self,
+        msg_id: int,
+        status: str,
+        gmail_message_id: str | None = None,
+        error_message: str | None = None,
+    ) -> None:
+        now = datetime.now().isoformat()
+        with self._conn() as conn:
+            if status == "approved":
+                conn.execute(
+                    """UPDATE outreach_messages
+                       SET status=?, approved_at=?, updated_at=?
+                       WHERE id=?""",
+                    (status, now, now, msg_id),
+                )
+            elif status == "sent":
+                conn.execute(
+                    """UPDATE outreach_messages
+                       SET status=?, sent_at=?, gmail_message_id=?, updated_at=?
+                       WHERE id=?""",
+                    (status, now, gmail_message_id, now, msg_id),
+                )
+            elif status == "failed":
+                conn.execute(
+                    """UPDATE outreach_messages
+                       SET status=?, error_message=?, updated_at=?
+                       WHERE id=?""",
+                    (status, error_message, now, msg_id),
+                )
+            else:
+                conn.execute(
+                    """UPDATE outreach_messages
+                       SET status=?, updated_at=?
+                       WHERE id=?""",
+                    (status, now, msg_id),
+                )
+
+    def update_outreach_content(
+        self,
+        msg_id: int,
+        subject: str | None = None,
+        body: str | None = None,
+    ) -> None:
+        now = datetime.now().isoformat()
+        with self._conn() as conn:
+            if subject is not None and body is not None:
+                conn.execute(
+                    """UPDATE outreach_messages
+                       SET subject=?, body=?, updated_at=? WHERE id=?""",
+                    (subject, body, now, msg_id),
+                )
+            elif subject is not None:
+                conn.execute(
+                    """UPDATE outreach_messages
+                       SET subject=?, updated_at=? WHERE id=?""",
+                    (subject, now, msg_id),
+                )
+            elif body is not None:
+                conn.execute(
+                    """UPDATE outreach_messages
+                       SET body=?, updated_at=? WHERE id=?""",
+                    (body, now, msg_id),
+                )
+
+    def has_recent_outreach(
+        self, lead_id: int, template: str, days: int = 30
+    ) -> bool:
+        cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+        with self._conn() as conn:
+            row = conn.execute(
+                """SELECT COUNT(*) as cnt FROM outreach_messages
+                   WHERE lead_id=? AND template=?
+                     AND status NOT IN ('failed', 'discarded')
+                     AND generated_at >= ?""",
+                (lead_id, template, cutoff),
+            ).fetchone()
+        return row["cnt"] > 0
+
+    def get_outreach_history(self, lead_id: int) -> list[dict]:
+        return self.list_outreach_messages(lead_id=lead_id)
+
+    # ── Gmail Credentials ──────────────────────────────────────
+
+    def store_gmail_credentials(
+        self,
+        email_address: str,
+        encrypted_refresh_token: str,
+        encrypted_access_token: str | None,
+        token_expiry: str | None,
+    ) -> None:
+        now = datetime.now().isoformat()
+        with self._conn() as conn:
+            conn.execute("DELETE FROM gmail_credentials")
+            conn.execute(
+                """INSERT INTO gmail_credentials
+                   (id, email_address, encrypted_refresh_token,
+                    encrypted_access_token, token_expiry, created_at, updated_at)
+                   VALUES (1,?,?,?,?,?,?)""",
+                (email_address, encrypted_refresh_token,
+                 encrypted_access_token, token_expiry, now, now),
+            )
+
+    def get_gmail_credentials(self) -> dict | None:
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT * FROM gmail_credentials WHERE id=1"
+            ).fetchone()
+        return dict(row) if row else None
+
+    def delete_gmail_credentials(self) -> None:
+        with self._conn() as conn:
+            conn.execute("DELETE FROM gmail_credentials")
 
     # ── Internal ───────────────────────────────────────────────
 
