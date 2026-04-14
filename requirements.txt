@@ -38,5 +38,8 @@ pytest-cov>=4.1.0
 # LinkedIn (optional)
 # linkedin-api>=2.0.0
 
+# Encryption
+cryptography>=42.0.0
+
 # Utilities
 python-dotenv>=1.0.0
