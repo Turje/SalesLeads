@@ -17,6 +17,30 @@ interface LeadFiltersProps {
 }
 
 const BOROUGHS = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
+
+const BOROUGH_NEIGHBORHOODS: Record<string, string[]> = {
+  Manhattan: [
+    "Battery Park City", "Chelsea", "Financial District", "Flatiron",
+    "Hudson Yards", "Midtown", "Midtown East", "Midtown South",
+    "Midtown West", "Penn District", "SoHo", "Tribeca",
+  ],
+  Brooklyn: [
+    "Brooklyn Heights", "Downtown Brooklyn", "DUMBO",
+    "East Williamsburg", "Navy Yard", "Park Slope",
+    "Sunset Park", "Williamsburg",
+  ],
+  Queens: [
+    "Astoria", "Flushing", "Jamaica", "Long Island City", "Rego Park",
+  ],
+  Bronx: [
+    "Fordham", "Foxhurst", "Grand Concourse", "Hunts Point",
+    "Mott Haven", "Pelham Bay", "Port Morris", "South Bronx", "Soundview",
+  ],
+  "Staten Island": [
+    "New Dorp", "St. George", "Stapleton", "Tompkinsville",
+  ],
+};
+
 const COMPANY_TYPES = [
   { value: "CRE_OPERATOR", label: "CRE Operator" },
   { value: "COWORKING", label: "Coworking" },
@@ -50,7 +74,7 @@ export function LeadFilters({ filters, onFilterChange }: LeadFiltersProps) {
         <Label htmlFor="borough-filter">Borough</Label>
         <Select
           value={String(filters.borough ?? "")}
-          onValueChange={(v) => update("borough", v ?? "")}
+          onValueChange={(v) => onFilterChange({ ...filters, borough: v ?? "", neighborhood: "" })}
         >
           <SelectTrigger className="w-full" id="borough-filter">
             <SelectValue placeholder="All boroughs" />
@@ -68,12 +92,33 @@ export function LeadFilters({ filters, onFilterChange }: LeadFiltersProps) {
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="neighborhood-filter">Neighborhood</Label>
-        <Input
-          id="neighborhood-filter"
-          placeholder="Filter by neighborhood..."
+        <Select
           value={String(filters.neighborhood ?? "")}
-          onChange={(e) => update("neighborhood", e.target.value)}
-        />
+          onValueChange={(v) => update("neighborhood", v ?? "")}
+        >
+          <SelectTrigger className="w-full" id="neighborhood-filter">
+            <SelectValue placeholder="All neighborhoods" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All</SelectItem>
+            {(filters.borough
+              ? BOROUGH_NEIGHBORHOODS[String(filters.borough)] ?? []
+              : Object.entries(BOROUGH_NEIGHBORHOODS).flatMap(([borough, hoods]) =>
+                  hoods.map((h) => ({ borough, hood: h }))
+                )
+            ).map((item) =>
+              typeof item === "string" ? (
+                <SelectItem key={item} value={item}>
+                  {item}
+                </SelectItem>
+              ) : (
+                <SelectItem key={`${item.borough}-${item.hood}`} value={item.hood}>
+                  {item.hood}
+                </SelectItem>
+              )
+            )}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-col gap-1.5">
