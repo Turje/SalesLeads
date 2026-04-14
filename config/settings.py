@@ -44,6 +44,15 @@ class Settings:
     linkedin_email: str = field(default_factory=lambda: _env("LINKEDIN_EMAIL"))
     linkedin_password: str = field(default_factory=lambda: _env("LINKEDIN_PASSWORD"))
 
+    # Gmail Outreach
+    gmail_client_id: str = field(default_factory=lambda: _env("GMAIL_CLIENT_ID"))
+    gmail_client_secret: str = field(default_factory=lambda: _env("GMAIL_CLIENT_SECRET"))
+    gmail_redirect_uri: str = field(default_factory=lambda: _env("GMAIL_REDIRECT_URI", "http://localhost:8000/api/auth/gmail/callback"))
+    encryption_key: str = field(default_factory=lambda: _env("ENCRYPTION_KEY"))
+    outreach_send_delay_min: int = field(default_factory=lambda: _env_int("OUTREACH_SEND_DELAY_MIN", 30))
+    outreach_send_delay_max: int = field(default_factory=lambda: _env_int("OUTREACH_SEND_DELAY_MAX", 60))
+    outreach_dedup_days: int = field(default_factory=lambda: _env_int("OUTREACH_DEDUP_DAYS", 30))
+
     # Dedup
     dedup_similarity_threshold: int = field(default_factory=lambda: _env_int("DEDUP_SIMILARITY_THRESHOLD", 85))
 
