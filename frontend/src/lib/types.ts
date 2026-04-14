@@ -1,5 +1,5 @@
 export type CompanyType = "CRE_OPERATOR" | "COWORKING" | "MULTI_TENANT" | "OTHER";
-export type PipelineStage = "NEW" | "APPROVED" | "CONTACTED" | "MEETING" | "PROPOSAL" | "CLOSED" | "DISAPPROVED";
+export type PipelineStage = "NEW" | "APPROVED" | "CONTACTED" | "MEETING" | "PROPOSAL" | "CONTRACT_SIGNED" | "CLOSED" | "DISAPPROVED";
 
 export interface Lead {
   id: number;

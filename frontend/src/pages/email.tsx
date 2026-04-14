@@ -21,7 +21,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Loader2Icon, CopyIcon, SparklesIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2Icon, CopyIcon, SparklesIcon, PenIcon } from "lucide-react";
 import type { EmailDraftRequest, EmailDraftResponse } from "@/lib/types";
 
 const TEMPLATES: { value: EmailDraftRequest["template"]; label: string }[] = [
@@ -35,7 +36,9 @@ export default function EmailPage() {
   const [template, setTemplate] =
     useState<EmailDraftRequest["template"]>("initial_outreach");
   const [draft, setDraft] = useState<EmailDraftResponse | null>(null);
+  const [editedSubject, setEditedSubject] = useState("");
   const [editedBody, setEditedBody] = useState("");
+  const [manualMode, setManualMode] = useState(false);
 
   const { data: leadsData, isLoading: leadsLoading } = useLeads({
     page_size: 200,
@@ -45,7 +48,9 @@ export default function EmailPage() {
     mutationFn: (req: EmailDraftRequest) => api.email.draft(req),
     onSuccess: (data) => {
       setDraft(data);
+      setEditedSubject(data.subject);
       setEditedBody(data.body);
+      setManualMode(false);
       toast.success("Email draft generated");
     },
     onError: (error) => {
@@ -63,9 +68,16 @@ export default function EmailPage() {
     draftMutation.mutate({ lead_id: leadId, template });
   };
 
+  const handleWriteManual = () => {
+    setManualMode(true);
+    setDraft(null);
+    setEditedSubject("");
+    setEditedBody("");
+  };
+
   const handleCopy = async () => {
-    const text = draft
-      ? `Subject: ${draft.subject}\n\n${editedBody}`
+    const text = editedSubject
+      ? `Subject: ${editedSubject}\n\n${editedBody}`
       : editedBody;
     try {
       await navigator.clipboard.writeText(text);
@@ -139,23 +151,32 @@ export default function EmailPage() {
               </Select>
             </div>
 
-            <Button
-              onClick={handleGenerate}
-              disabled={!leadId || draftMutation.isPending}
-              className="w-full"
-            >
-              {draftMutation.isPending ? (
-                <>
-                  <Loader2Icon className="size-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <SparklesIcon className="size-4" />
-                  Generate Draft
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleGenerate}
+                disabled={!leadId || draftMutation.isPending}
+                className="flex-1"
+              >
+                {draftMutation.isPending ? (
+                  <>
+                    <Loader2Icon className="size-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <SparklesIcon className="size-4" />
+                    Generate Draft
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleWriteManual}
+              >
+                <PenIcon className="size-4" />
+                Write Manually
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -169,13 +190,16 @@ export default function EmailPage() {
             )}
           </CardHeader>
           <CardContent className="space-y-4">
-            {draft ? (
+            {draft || manualMode ? (
               <>
                 <div className="space-y-2">
-                  <Label>Subject</Label>
-                  <p className="text-sm font-medium rounded-lg border border-border bg-muted/50 px-3 py-2">
-                    {draft.subject}
-                  </p>
+                  <Label htmlFor="email-subject">Subject</Label>
+                  <Input
+                    id="email-subject"
+                    value={editedSubject}
+                    onChange={(e) => setEditedSubject(e.target.value)}
+                    placeholder="Enter email subject..."
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email-body">Body</Label>
@@ -183,6 +207,7 @@ export default function EmailPage() {
                     id="email-body"
                     value={editedBody}
                     onChange={(e) => setEditedBody(e.target.value)}
+                    placeholder={manualMode ? "Write your email here..." : ""}
                     className="min-h-[280px]"
                   />
                 </div>
@@ -196,7 +221,7 @@ export default function EmailPage() {
                 <p className="text-sm text-muted-foreground">
                   {draftMutation.isPending
                     ? "Generating your email..."
-                    : "Select a lead and click Generate to create a draft."}
+                    : "Select a lead and click Generate, or Write Manually."}
                 </p>
               </div>
             )}

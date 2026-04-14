@@ -238,7 +238,7 @@ class TestConstants:
 
     def test_valid_pipeline_stages(self):
         """VALID_PIPELINE_STAGES contains exactly the expected stages."""
-        expected = {"NEW", "APPROVED", "CONTACTED", "MEETING", "PROPOSAL", "CLOSED", "DISAPPROVED"}
+        expected = {"NEW", "APPROVED", "CONTACTED", "MEETING", "PROPOSAL", "CONTRACT_SIGNED", "CLOSED", "DISAPPROVED"}
         assert VALID_PIPELINE_STAGES == expected
 
     def test_company_types_is_set(self):

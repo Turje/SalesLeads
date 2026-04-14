@@ -22,6 +22,7 @@ const ALL_STAGES: { value: PipelineStage; label: string }[] = [
   { value: "CONTACTED", label: "Contacted" },
   { value: "MEETING", label: "Meeting" },
   { value: "PROPOSAL", label: "Proposal" },
+  { value: "CONTRACT_SIGNED", label: "Contract Signed" },
   { value: "CLOSED", label: "Closed" },
   { value: "DISAPPROVED", label: "Disapproved" },
 ];
@@ -33,6 +34,7 @@ export default function ExportPage() {
     "CONTACTED",
     "MEETING",
     "PROPOSAL",
+    "CONTRACT_SIGNED",
     "CLOSED",
   ]);
 

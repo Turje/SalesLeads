@@ -27,6 +27,7 @@ const STAGES: PipelineStage[] = [
   "CONTACTED",
   "MEETING",
   "PROPOSAL",
+  "CONTRACT_SIGNED",
   "CLOSED",
   "DISAPPROVED",
 ];

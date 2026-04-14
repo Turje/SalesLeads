@@ -28,6 +28,7 @@ const STAGES: { value: string; label: string }[] = [
   { value: "CONTACTED", label: "Contacted" },
   { value: "MEETING", label: "Meeting" },
   { value: "PROPOSAL", label: "Proposal" },
+  { value: "CONTRACT_SIGNED", label: "Contract Signed" },
   { value: "CLOSED", label: "Closed" },
   { value: "DISAPPROVED", label: "Disapproved" },
 ];

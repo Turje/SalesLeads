@@ -7,6 +7,7 @@ import {
   CalendarCheck,
   FileText,
   CheckCircle2,
+  PenLine,
   Users,
 } from "lucide-react";
 
@@ -37,6 +38,12 @@ const STAGE_CONFIG: Record<
     color: "text-orange-400",
     icon: FileText,
     description: "Proposal sent",
+  },
+  CONTRACT_SIGNED: {
+    label: "Contract Signed",
+    color: "text-teal-400",
+    icon: PenLine,
+    description: "Contract executed",
   },
   CLOSED: {
     label: "Closed",

@@ -30,6 +30,7 @@ export function KanbanBoard({ stageConfig }: KanbanBoardProps) {
   const contacted = usePipelineStage("CONTACTED");
   const meeting = usePipelineStage("MEETING");
   const proposal = usePipelineStage("PROPOSAL");
+  const contractSigned = usePipelineStage("CONTRACT_SIGNED");
   const closed = usePipelineStage("CLOSED");
 
   const stageQueryMap: Record<string, typeof approved> = {
@@ -37,6 +38,7 @@ export function KanbanBoard({ stageConfig }: KanbanBoardProps) {
     CONTACTED: contacted,
     MEETING: meeting,
     PROPOSAL: proposal,
+    CONTRACT_SIGNED: contractSigned,
     CLOSED: closed,
   };
 

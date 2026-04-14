@@ -47,7 +47,7 @@ const COMPANY_TYPES = [
   { value: "MULTI_TENANT", label: "Multi Tenant" },
   { value: "OTHER", label: "Other" },
 ];
-const STAGES = ["NEW", "APPROVED", "CONTACTED", "MEETING", "PROPOSAL", "CLOSED", "DISAPPROVED"];
+const STAGES = ["NEW", "APPROVED", "CONTACTED", "MEETING", "PROPOSAL", "CONTRACT_SIGNED", "CLOSED", "DISAPPROVED"];
 
 export function LeadFilters({ filters, onFilterChange }: LeadFiltersProps) {
   const update = (key: string, value: string | number) => {
